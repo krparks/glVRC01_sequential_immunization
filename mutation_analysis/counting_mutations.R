@@ -18,8 +18,8 @@ align_mat<-lapply(seq_list, as.matrix)
 names(align_mat)<-c(filenames)
 
 #This function makes calculates the number of mutations in all of the sequences in regards 
-#to the reference sequence used. This is either the KI gene or whatever the mouse 
-#light chain derivative is.
+#to the reference sequence used. The reference sequence
+#is either the KI gene or whatever the mouse light chain derivative is.
 #the first function makes all of the sequences one of the matrixes into a list, excluding 
 #the reference sequence. The second part of the function compares the 'query' sequences
 #to the reference sequence. You should always make the reference sequence the first sequence
@@ -36,7 +36,8 @@ mismatch_matrix<-function(alignment_matrix) {
 mut_summ<-lapply(align_mat, FUN = mismatch_matrix)
 
 #this function gets the names of your sequences from each of your matrices 
-#this excludes the reference sequence
+#If your reference sequence is the first sequence in your alignment this will
+#remove that name from your list of names
 names<-function(alignment_matrix){
   names<-row.names(alignment_matrix)
   names<-names[-1]
@@ -48,25 +49,30 @@ names_for_dataframe<-lapply(align_mat, names)
 #combine the names and the number of mutations and create a dataframe with them
 mut_dataframe<-map2(names_for_dataframe, mut_summ, data.frame)
 
-#save the mutation summaries as csv files
+#This will write a csv for each of your mutation summaries.
 mapply(write.csv, mut_dataframe, file=paste0(filenames, '.csv'), row.names = FALSE)
 
-#read all the files in
+#Read in all of the mutation summary csv files that you just made
 csv_files<-list.files(pattern = ".csv")
 csv_list<-lapply(csv_files, read.csv)
-#name the files
+
+#name the files. You are giving each mutation summary
+#the same name as the csv file name, but removing
+#the .fasta.csv portion from the csv file name.
 names(csv_list)<-str_replace(csv_files, pattern = ".fasta.csv", replacement = "")
 
-#give the dataframes column names
+#give the dataframes column names and apply it to your list of csv files
 colnames<-c("sequence", "mutations")
 csv_list<-lapply(csv_list, setNames, colnames)
 
+#make a list of the file names without the .fasta.csv part
 filenames2 <- sub(".fasta.csv", "", csv_files)
 
-#this puts the fasta name into one column called in the data frames
+#this puts the fasta name into one column in the data frames. Next, you are going to split
+#your file name into separate columns.
 csv_list2<-Map(cbind, csv_list, chain = filenames2)
 
-#this separates the chain and group into separate columns
+#this separates the name of your file into separate columns. 
 separate_columns<-function (list) {separate(list, chain, 
                       into = col_names_for_compiled_sequences, sep = " ")}
 
@@ -84,9 +90,10 @@ csv_list5$immunization<-ifelse(csv_list5$immunization == "426c_Core_C4b_HxB2_Cor
 #write a csv file with the results
 write.csv(csv_list5, "mutation_summary.csv")
 
+#count the number of sequences for each immunization group
 csv_list5 %>% group_by(immunization, chain, adjuvant, immunogen) %>% count
 
-#summary table
+#create a summary table to calculate the average number of mutations, sd, and se
 mutation_summary<- csv_list5 %>% group_by(chain, immunization) %>% summarise(
   N    = length(mutations),
   mean = mean(mutations),
@@ -95,11 +102,11 @@ mutation_summary<- csv_list5 %>% group_by(chain, immunization) %>% summarise(
 )
 
 
-
+####Graphing the results of the summary analysis####
 #make colors for the graphs
 fillcolors <- c("red", "blue")
 
-#label everything correctly
+#label everything how I want it to be labeled on the graph
 x_labels <- c("prime","prime + boost")
 csv_list5$chain <- factor(csv_list5$chain,
                           labels = c("VH", "VL"))
@@ -153,7 +160,7 @@ mutation_graph_do_not_color_by_adjuvant<-ggplot(data = mutation_summary)+
 
 ggsave("mutation_graph_no_adjuvant_color.tiff",mutation_graph_do_not_color_by_adjuvant, device = "tiff", width = 10, height = 6)
 
-
+####Statistical analysis of the mutation analysis####
 ##Heavy chain comparison using wilcoxon test (non-parametric, unpaired test)
 prime_heavy<- csv_list5 %>% filter(chain == "VH", immunization == "prime")
 boost_heavy<- csv_list5 %>% filter(chain == "VH", immunization == "boost")
