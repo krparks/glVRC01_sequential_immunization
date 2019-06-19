@@ -4,6 +4,9 @@ library(seqinr)
 library(tidyverse)
 library(data.table)
 
+#you may or may not need to change your working directory
+setwd("./mutation_analysis")
+
 ###change this every time
 ##need to write what you want the name of your file name to be split into. I separate these
 ##items in my file names by spaces
