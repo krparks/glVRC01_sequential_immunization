@@ -23,7 +23,7 @@ names(align_mat)<-c(filenames)
 #This function makes calculates the number of mutations in all of the sequences in regards 
 #to the reference sequence used. The reference sequence
 #is either the KI gene or whatever the mouse light chain derivative is.
-#the first function makes all of the sequences one of the matrixes into a list, excluding 
+#the first function makes all of the sequences of the matrixes into a list, excluding 
 #the reference sequence. The second part of the function compares the 'query' sequences
 #to the reference sequence. You should always make the reference sequence the first sequence
 #in your alignment.
